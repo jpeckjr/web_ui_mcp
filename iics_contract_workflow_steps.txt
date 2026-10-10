@@ -1,0 +1,298 @@
+IICS WORKFLOW - mt_stage_salesforce_contract
+Add Identity_Org_Id__c from Salesforce source to Snowflake target
+Executed and verified via Web UI MCP - 2026-10-01
+Org: SPS Commerce | Pod: na2.dm-us.informaticacloud.com
+Task ID: 40I6QamRUa7jvIzYGBnYYL
+
+
+===========================================================
+PREREQUISITE (not in original list, but required)
+===========================================================
+
+0. The target column must exist in Snowflake BEFORE step 26.
+   If it does not, the Input Parameters page shows 0 target
+   fields and the drag in step 39 is impossible.
+
+   ALTER TABLE DEV_STAGING.SALESFORCE.CONTRACT
+     ADD COLUMN IDENTITY_ORG_ID__C TEXT(255);
+
+   Cleanup when testing is finished (note: the saved mapping
+   task references this column, so dropping it breaks the task
+   until the query and mapping are reverted):
+
+   ALTER TABLE DEV_STAGING.SALESFORCE.CONTRACT
+     DROP COLUMN IDENTITY_ORG_ID__C;
+
+
+===========================================================
+NAVIGATION
+===========================================================
+
+1.  Click 'Explore'
+    - Use the left-nav link, NOT the Library tile. Both match
+      the text "Explore" and a plain text selector is ambiguous.
+    - Selector used:
+      a:has(span.d-shell__nav__links__link__label:text-is("Explore"))
+
+2.  'Items Per Page' -> 100
+
+3.  Click project 'staging'
+    - Selector: a.iics-explore__table__name__text:text-is("staging")
+    - A plain text match also hits the "staging\salesforce"
+      location column entries.
+
+4.  'Items Per Page' -> 100
+
+5.  Click project 'salesforce'
+    - Selector: a.iics-explore__table__name__text:text-is("salesforce")
+
+6.  'Items Per Page' -> 100
+
+7.  'Find' search bar -> 'contract'
+    - Selector: [data-testid="table-toolbar-search"]
+
+8.  Click 'mt_stage_salesforce_contract'
+
+9.  Click 'Edit'
+
+
+===========================================================
+READ THE QUERY
+===========================================================
+
+10. Click 'Sources' (Step 2)
+    - Selector: [aria-label="Step 2 Sources"]
+
+11. Click the 'Query (p_source_object):*' link
+    - Edit Custom Query dialog opens.
+
+12. TAKE SCREENSHOT
+    - Only about 6 of the query's 17 wrapped lines are visible.
+    - The textarea is rows=5 and has its own scrollbar.
+
+13. ORIGINAL STEP: drag the lower-right corner of the query box
+    down to expose the full query.
+    *** NOT POSSIBLE WITH THIS MCP ***
+    - drag_element targets an element's CENTER. The textarea
+      sits on top of the resize grip, so the pointer never
+      lands on the corner. Playwright reports:
+      "<textarea ...> intercepts pointer events"
+    - The resize handle is <d-icon name="resize-handle"
+      class="d-icon textarea-resize-icon"> inside
+      .resize-handle-container, but it is unreachable.
+    - Replaced with steps 14-19 below.
+
+14. Click 'Cancel'
+
+15. Click the query link, then 'Cancel' again
+    - This scrolls the page so the query text starts at the
+      top of the viewport.
+
+16. TAKE SCREENSHOT
+    - Captures wrapped lines 1-12:
+      "select Id" through ",Partner_Cobrand_Type__c"
+
+17. Click the 'Display technical names instead of labels'
+    checkbox
+    - Selector: input[type="checkbox"][value="showBusinessNames"]
+    - Purpose is NOT the setting itself. Clicking it forces a
+      MINIMAL scroll to bring the checkbox into view, which
+      lands the viewport on the remainder of the query with no
+      gap. Clicking a section header instead (e.g. "Data
+      Preview") over-scrolls and skips a line.
+
+18. TAKE SCREENSHOT
+    - Captures wrapped lines 13-17:
+      ",Partner_Ops_Notes__c" through ",Custom_Price_Increase
+      _Cap_Type__c from Contract"
+
+19. Click the checkbox again to restore it
+
+
+===========================================================
+EDIT AND VALIDATE
+===========================================================
+
+20. Click the query link -> dialog opens
+
+21. Overwrite the textarea with the full query, with
+    ',Identity_Org_Id__c' inserted before 'from Contract'
+    - Selector:
+      textarea[placeholder^="Enter a valid custom query"]
+    - fill_input REPLACES the entire contents, so the whole
+      query must be retyped. Validate catches a bad field name
+      but will NOT catch a field accidentally dropped during
+      transcription - verify the field count.
+
+22. Click 'Validate'
+    - Selector: button:has(span:text-is("Validate"))
+
+23. WAIT ~8 SECONDS
+    - Result: "The custom query is valid."
+
+24. Click 'OK'
+    - Selector: button:has(span:text-is("OK"))
+
+
+===========================================================
+REFRESH TARGET
+===========================================================
+
+25. Click 'Targets' (Step 3)
+
+26. Click 'CONTRACT'
+    - Selector: a:text-is("CONTRACT")
+
+27. Click the refresh button
+    - Selector: #refreshCacheBtn
+
+28. WAIT ~25 SECONDS
+    *** CRITICAL ***
+    - Without this wait the search returns stale metadata and
+      the newly added column does not appear. This was the
+      failure mode on the first run even though the Snowflake
+      column existed.
+
+29. 'Name, Label, Description, Type' search bar -> 'contract'
+    - Selector:
+      input[placeholder*="Name, Label, Description" i]
+
+30. Click 'Search'
+
+31. Click the 'CONTRACT' radio button
+    - Selector: input[type="radio"][value="CONTRACT"]
+
+32. Click 'OK'
+    - Selector: span.infaButton-label:text-is("OK")
+    - This dialog's OK is a span inside a div, not a <button>.
+      button:text-is("OK") times out here.
+
+33. WAIT ~15 SECONDS
+
+
+===========================================================
+INPUT PARAMETERS - FIELD SEARCH AND MAPPING
+===========================================================
+
+34. Click 'Input Parameters' (Step 4)
+
+35. WAIT ~15 SECONDS for 'p_field_mapping' to load
+    - State at this point:
+        Incoming Fields: 38 of 39 mapped
+        Target Fields:   38 of 39 mapped
+
+36. TARGET-side 'Find' -> 'IDENTITY'
+    - Selector: input[placeholder="Find"] >> nth=2
+    - Isolates:
+        IDENTITY_ORG_ID__C | nstring(255,0) | Expression empty
+
+37. SOURCE-side 'Find' -> 'Identity'
+    - Selector: input[placeholder="Find"] >> nth=1
+    - Isolates:
+        Identity_Org_Id__c | string(255,0)
+
+    *** FIND BOX INDEXING GOTCHA ***
+    There are THREE inputs with placeholder "Find" in the DOM:
+      nth=0  leftover HIDDEN Explore toolbar search (fails)
+      nth=1  SOURCE side (Incoming Fields)
+      nth=2  TARGET side (Target Fields)
+    Targeting nth=0 silently fails / times out as not visible.
+
+    Both searches are case-insensitive. 'Identity' and
+    'IDENTITY' each match either side; matching case per side
+    is for readability only.
+
+38. TAKE SCREENSHOT
+    - Confirms exactly one row on each side before dragging.
+    - Counts read (0 of 1 mapped) on both sides.
+
+39. Drag source 'Identity_Org_Id__c' onto target
+    'IDENTITY_ORG_ID__C'
+    - Selectors (exact case matters - :text-is is
+      case-sensitive, plain text= is not and would match both
+      sides):
+        source: :text-is("Identity_Org_Id__c")
+        target: :text-is("IDENTITY_ORG_ID__C")
+    - drag_element works here; these are ordinary grid rows
+      with no overlay intercepting the pointer.
+
+40. TAKE SCREENSHOT
+    - Expression now reads 'Identity_Org_Id__c'
+    - Hover tooltip confirms:
+        Name        IDENTITY_ORG_ID__C
+        Unique Name IDENTITY_ORG_ID__C
+        Label       IDENTITY_ORG_ID__C
+        Parent      CONTRACT
+        Type        nstring
+        Precision   255
+
+41. Clear SOURCE-side 'Find' (fill with empty string)
+
+42. Clear TARGET-side 'Find' (fill with empty string)
+
+43. TAKE SCREENSHOT
+    - Incoming Fields: 39 of 39 mapped
+    - Target Fields:   39 of 39 mapped
+
+
+===========================================================
+SAVE
+===========================================================
+
+44. CHECK WITH ME
+
+45. IF I SAY OKAY
+
+46. Click 'Save'
+    - Selector: button:has-text("Save")
+
+47. WAIT ~12 SECONDS, then TAKE SCREENSHOT to confirm
+    - Save button greys out
+    - Unsaved-changes dot next to the task name clears
+    - Task status reads 'Valid'
+    - Target grid scrolls to the bottom, showing:
+        IDENTITY_ORG_ID__C | nstring(255,0) | Identity_Org_Id__c
+
+
+===========================================================
+FINAL QUERY (as saved)
+===========================================================
+
+select Id ,Active_Subscription_Product_Sell_Group__c ,StartDate
+,EndDate ,Term_Type__c ,ContractTermText__c
+,Advance_Cancel_Notice__c ,Document_Plan_Type__c
+,Document_Plan__c ,Document_Allotment__c ,Contract_Division__c
+,Next_Renewal_Date__c,Current_Term__c,
+Billing_Termination_Date__c ,AccountId,Description,Name,
+ActivatedDate,ContractNumber ,BillingMethod__c
+,Contract_Migration_ID__c ,Non_Renewable_Contract__c
+,Number_of_Manual_Renewal_Subscriptions__c
+,PartnerStack_Deal_ID__c ,PartnerStack_Partner_ID__c
+,PartnerStack_Partner_Key__c ,Partner_Cobrand_Type__c
+,Partner_Ops_Notes__c ,Stripe_Subscription_ID__c
+,Take_Rate__c ,US_or_CN_Entity__c , Billing_Frequency__c
+,Status,Subscription_Total__c,Previous_Renewal_Date__c
+,Custom_Price_Increase_Cap__c ,Custom_Price_Increase_Cap_Type__c
+,Identity_Org_Id__c from Contract
+
+(Line breaks above are for readability. The value stored in
+the textarea is a single continuous string.)
+
+
+===========================================================
+SUMMARY OF DEVIATIONS FROM THE ORIGINAL STEP LIST
+===========================================================
+
+1. Added prerequisite step 0 - the Snowflake column must exist
+   first. This was the cause of the first run's failure.
+
+2. Step 13 (drag the query box corner) is not achievable with
+   this MCP. Replaced with the two-pass scroll read in steps
+   14-19.
+
+3. Added explicit waits at steps 23, 28, 33, 35 and 47.
+   The wait at step 28 is the important one - a refresh
+   followed immediately by a search returns stale metadata.
+
+4. Documented the Find-box indexing quirk at step 37 and the
+   case-sensitivity requirement at step 39.
