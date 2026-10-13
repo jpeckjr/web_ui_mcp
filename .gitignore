@@ -1,32 +1,22 @@
+# Secrets and credentials
 .env
+.env.*
+*.pem
+*.p8
+*.key
+
+# Browser session (holds the IICS login)
 browser_profile/
-.env
-.env.*
-*.pem
-*.p8
-*.key
+
+# Per-ticket workflow output: DDL files, export ZIPs and manifests
+# fetched from the box, Jira attachments. Never commit these.
+runs/
+
+# Python / Node
 __pycache__/
 .venv/
 venv/
 node_modules/
-.DS_Store
-.env
-.env.*
-*.pem
-*.p8
-*.key
-__pycache__/
-.venv/
-venv/
-node_modules/
-.DS_Store
-.env
-.env.*
-*.pem
-*.p8
-*.key
-__pycache__/
-.venv/
-venv/
-node_modules/
+
+# macOS
 .DS_Store
